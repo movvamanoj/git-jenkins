@@ -1,0 +1,25 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: step-eks-cluster
+  region: us-east-1
+
+managedNodeGroups:
+  - name: ng-db
+    instanceType: t2.micro
+    labels: { role: builders }
+    minSize: 2
+    maxSize: 4
+    tags:
+      Name: ng-db
+  - name: ng-spot
+    instanceType: t2.micro
+    labels: { role: builders }
+    minSize: 2
+    maxSize: 4
+    spot: true
+    tags:
+      Name: ng-spot
+
+
