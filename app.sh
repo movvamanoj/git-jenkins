@@ -1,38 +1,48 @@
 #!/bin/bash
 
-# Create HelloWorldApp directory and index.html file
-mkdir HelloWorldApp
-echo "<html><body><h1>Hello, World!</h1></body></html>" > HelloWorldApp/index.html
+# Function to check if a package is installed
+is_package_installed() {
+  local package_name="$1"
+  if command -v "$package_name" &>/dev/null; then
+    return 0 # Package is installed
+  else
+    return 1 # Package is not installed
+  fi
+}
 
-# Check Linux Distribution
+# Install common packages
+install_common_packages() {
+  sudo yum update -y
+  sudo yum install -y wget unzip
+}
+
+# Install Apache and set up a simple web application
+install_apache() {
+  if is_package_installed "httpd"; then
+    echo "Apache is already installed."
+  else
+    sudo yum install -y httpd
+    sudo systemctl enable httpd
+    sudo systemctl start httpd
+  fi
+  
+  # Create web content
+  echo '<h1>Hello MANOJKUMAR MOVVA, Your New APP Ready</h1>' | sudo tee /var/www/html/index.html
+  sudo mkdir /var/www/html/app1
+  echo '<!DOCTYPE html> <html> <body style="background-color:rgb(250, 210, 210);"> <h1>OneMuthoot - APP-1</h1> <p>Terraform Demo</p> <p>Application Version: V1</p> </body></html>' | sudo tee /var/www/html/app1/index.html
+}
+
+# Main script execution
 if [[ -f /etc/redhat-release ]]; then
-   DISTRO="redhat"
-elif [[ -f /etc/debian_version ]]; then
-   DISTRO="debian"
+  install_common_packages
+  install_apache
+elif [[ -f /etc/lsb-release ]]; then
+  install_common_packages
+  install_apache
+elif [[ -f /etc/system-release && $(cat /etc/system-release) == *"Amazon Linux"* ]]; then
+  install_common_packages
+  install_apache
 else
-   echo "Unsupported Linux distribution"
-   exit 1
-fi
-
-# Install Tomcat based on the detected distribution
-if [[ "$DISTRO" == "redhat" ]]; then
-   sudo yum install -y tomcat
-elif [[ "$DISTRO" == "debian" ]]; then
-   sudo apt-get install -y tomcat9
-fi
-
-# Deploy HelloWorldApp to Tomcat
-sudo cp -r HelloWorldApp /var/lib/tomcat/webapps/
-
-# Start Tomcat
-sudo systemctl start tomcat
-
-# Enable Tomcat to start on boot
-sudo systemctl enable tomcat
-
-# Check if Tomcat started successfully
-if systemctl is-active --quiet tomcat; then
-   echo "Tomcat started successfully."
-else
-   echo "Failed to start Tomcat."
+  echo "Unsupported operating system."
+  exit 1
 fi
