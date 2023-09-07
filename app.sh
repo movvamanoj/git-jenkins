@@ -1,44 +1,38 @@
 #!/bin/bash
 
-# Detect the Linux distribution and package manager
-if [ -f /etc/os-release ]; then
-    source /etc/os-release
-    LINUX_DISTRO=$ID
-    PACKAGE_MANAGER=
-    if [ "$LINUX_DISTRO" == "ubuntu" ] || [ "$LINUX_DISTRO" == "debian" ]; then
-        PACKAGE_MANAGER="apt-get"
-    elif [ "$LINUX_DISTRO" == "centos" ] || [ "$LINUX_DISTRO" == "rhel" ]; then
-        PACKAGE_MANAGER="yum"
-    else
-        echo "Unsupported Linux distribution: $LINUX_DISTRO"
-        exit 1
-    fi
+# Create HelloWorldApp directory and index.html file
+mkdir HelloWorldApp
+echo "<html><body><h1>Hello, World!</h1></body></html>" > HelloWorldApp/index.html
+
+# Check Linux Distribution
+if [[ -f /etc/redhat-release ]]; then
+   DISTRO="redhat"
+elif [[ -f /etc/debian_version ]]; then
+   DISTRO="debian"
 else
-    echo "Unable to detect the Linux distribution."
-    exit 1
+   echo "Unsupported Linux distribution"
+   exit 1
 fi
 
-# Install Git
-echo "Installing Git..."
-sudo $PACKAGE_MANAGER update -y
-sudo $PACKAGE_MANAGER install git -y
+# Install Tomcat based on the detected distribution
+if [[ "$DISTRO" == "redhat" ]]; then
+   sudo yum install -y tomcat
+elif [[ "$DISTRO" == "debian" ]]; then
+   sudo apt-get install -y tomcat9
+fi
 
-# Install Tomcat
-echo "Installing Tomcat..."
-sudo $PACKAGE_MANAGER install tomcat -y
+# Deploy HelloWorldApp to Tomcat
+sudo cp -r HelloWorldApp /var/lib/tomcat/webapps/
 
-# Create and deploy HelloWorld web application
-echo "Creating HelloWorld web application..."
-sudo mkdir -p /var/lib/tomcat/webapps/HelloWorld
-echo "<html><body><h1>Hello, World!</h1></body></html>" | sudo tee /var/lib/tomcat/webapps/HelloWorld/index.html
-
-# Start Tomcat service
-echo "Starting Tomcat..."
+# Start Tomcat
 sudo systemctl start tomcat
 
 # Enable Tomcat to start on boot
 sudo systemctl enable tomcat
 
-# Check Tomcat status
-echo "Tomcat status:"
-sudo systemctl status tomcat
+# Check if Tomcat started successfully
+if systemctl is-active --quiet tomcat; then
+   echo "Tomcat started successfully."
+else
+   echo "Failed to start Tomcat."
+fi
